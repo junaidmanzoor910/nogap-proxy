@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Example — copy to certbot-dns-cloudflare.sh (gitignored) on the instance or operator workstation.
+# Do NOT commit cloudflare.ini or API tokens.
+set -euo pipefail
+
+PROXY_HOSTNAME="${PROXY_HOSTNAME:-proxy-dev.nogap.ai}"
+CREDENTIALS="${CLOUDFLARE_CREDENTIALS_FILE:-/root/.secrets/cloudflare.ini}"
+
+if [[ ! -f "$CREDENTIALS" ]]; then
+  echo "Create $CREDENTIALS with mode 0600:" >&2
+  echo '  dns_cloudflare_api_token = <scoped-token>' >&2
+  exit 1
+fi
+chmod 600 "$CREDENTIALS"
+
+certbot certonly \
+  --non-interactive \
+  --agree-tos \
+  --email "${ACME_EMAIL:?Set ACME_EMAIL}" \
+  --dns-cloudflare \
+  --dns-cloudflare-credentials "$CREDENTIALS" \
+  -d "$PROXY_HOSTNAME"
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/validate-fullchain-pem.sh
+source "$ROOT/scripts/lib/validate-fullchain-pem.sh"
+validate_le_fullchain_pem "/etc/letsencrypt/live/${PROXY_HOSTNAME}/fullchain.pem"
+
+install -d -m 700 /etc/squid/tls
+install -m 644 "/etc/letsencrypt/live/${PROXY_HOSTNAME}/fullchain.pem" /etc/squid/tls/fullchain.pem
+install -m 600 "/etc/letsencrypt/live/${PROXY_HOSTNAME}/privkey.pem" /etc/squid/tls/privkey.pem
+
+# Deploy hook for renewal (also install to /etc/letsencrypt/renewal-hooks/deploy/)
+/opt/nogap-split-proxy/scripts/deploy-config.sh
+
+echo "Certificate issued and services reloaded."

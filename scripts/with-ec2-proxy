@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Run a command with HTTPS_PROXY set so host-side outbound HTTPS uses EC2 Squid.
+# Local inbound unchanged: NO_PROXY keeps localhost destinations direct.
+#
+#   cp scripts/workstation-proxy.env.example scripts/workstation-proxy.env
+#   # edit NOGAP_PROXY_PASS in workstation-proxy.env
+#   scripts/with-ec2-proxy curl -sS https://api.ipify.org
+#   scripts/with-ec2-proxy bash -lc 'cd ~/nogap-services && ./local-run-all.sh all'
+#
+# Does not modify nogap-services; Docker containers only use the proxy if their
+# run scripts pass HTTP_PROXY (most local-run.sh files do not).
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+EXAMPLE="${ROOT}/scripts/workstation-proxy.env.example"
+LOCAL="${ROOT}/scripts/workstation-proxy.env"
+
+if [[ -f "$LOCAL" ]]; then
+  # shellcheck disable=SC1090
+  source "$LOCAL"
+elif [[ -f "$EXAMPLE" ]]; then
+  # shellcheck disable=SC1090
+  source "$EXAMPLE"
+else
+  echo "Missing ${EXAMPLE}" >&2
+  exit 1
+fi
+
+LOCAL_PORT="${NOGAP_LOCAL_FORWARDER_PORT:-3129}"
+_FWD_PID="${NOGAP_FORWARDER_STATE:-${HOME}/.nogap-proxy-forwarder}/squid.pid"
+if [[ -f "$_FWD_PID" ]] && kill -0 "$(cat "$_FWD_PID")" 2>/dev/null; then
+  export HTTP_PROXY="http://127.0.0.1:${LOCAL_PORT}"
+  export HTTPS_PROXY="${HTTP_PROXY}" ALL_PROXY="${HTTP_PROXY}"
+else
+  if [[ -z "${NOGAP_PROXY_PASS:-}" ]]; then
+    echo "Set NOGAP_PROXY_PASS in scripts/workstation-proxy.env or run scripts/start-local-forwarder.sh" >&2
+    exit 1
+  fi
+  _PROXY_URL="https://${NOGAP_PROXY_USER}:${NOGAP_PROXY_PASS}@${NOGAP_PROXY_HOST}:${NOGAP_PROXY_PORT}"
+  export HTTPS_PROXY="${_PROXY_URL}" HTTP_PROXY="${_PROXY_URL}" ALL_PROXY="${_PROXY_URL}"
+  unset _PROXY_URL
+fi
+export NO_PROXY="${NO_PROXY:-localhost,127.0.0.1,::1,.local,169.254.169.254,host.docker.internal,*.internal}"
+export no_proxy="${NO_PROXY}"
+
+if [[ $# -eq 0 ]]; then
+  echo "Usage: $0 <command> [args...]" >&2
+  exit 1
+fi
+exec "$@"

@@ -1,0 +1,56 @@
+# Managed by nogap-split-proxy — render from template on deploy.
+# Ubuntu 24.04 Squid 6.14 — HTTPS forward proxy (no TLS interception).
+# Routing mode: authenticated users may CONNECT to any destination host on port 443.
+
+# TLS explicit proxy listener (clients must use HTTPS proxy or equivalent; see docs/CLIENT-SETUP.md).
+https_port ${PROXY_HTTPS_PORT} tls-cert=/etc/squid/tls/fullchain.pem tls-key=/etc/squid/tls/privkey.pem
+
+# --- Authentication (hashes in /etc/squid/passwords; never log credentials) ---
+auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwords
+auth_param basic children 5 startup=5 idle=1
+auth_param basic realm ${PROXY_HOSTNAME}
+auth_param basic credentialsttl 2 hours
+
+acl authenticated proxy_auth REQUIRED
+
+# --- Methods / ports (HTTPS via CONNECT to 443 only) ---
+acl CONNECT method CONNECT
+acl SSL_ports port 443
+acl Safe_ports port 443
+
+# CONNECT :authority expressed as IP literals (hostname ACLs are not IP-level egress control).
+acl dst_ipv4_literal dstdom_regex -i ^([0-9]{1,3}\.){3}[0-9]{1,3}$
+acl dst_ipv6_bracket_literal dstdom_regex -i ^\[[0-9a-fA-F:.]+\]$
+acl dst_ipv6_plain_literal dstdom_regex -i ^[0-9a-fA-F]+:[0-9a-fA-F:.]+$
+
+acl max_conn_per_client maxconn 200
+
+# --- Access policy (order matters; default deny) ---
+http_access deny !authenticated
+http_access deny max_conn_per_client
+http_access deny !Safe_ports
+http_access deny !CONNECT
+http_access deny CONNECT !SSL_ports
+http_access deny dst_ipv4_literal
+http_access deny dst_ipv6_bracket_literal
+http_access deny dst_ipv6_plain_literal
+http_access allow authenticated
+http_access deny all
+
+# --- Logging (default format does not include Proxy-Authorization) ---
+access_log daemon:/var/log/squid/access.log squid
+cache_log /var/log/squid/cache.log
+logfile_rotate 14
+
+debug_options ALL,1
+
+visible_hostname ${PROXY_HOSTNAME}
+via off
+forwarded_for delete
+connect_timeout 30 seconds
+read_timeout 5 minutes
+request_timeout 5 minutes
+client_persistent_connections on
+server_persistent_connections on
+
+cache deny all

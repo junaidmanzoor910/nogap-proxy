@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Install as /etc/letsencrypt/renewal-hooks/deploy/nogap-split-proxy.sh
+set -euo pipefail
+PROXY_HOSTNAME="${RENEWED_DOMAINS:-proxy-dev.nogap.ai}"
+ROOT="/opt/nogap-split-proxy"
+# shellcheck source=lib/validate-fullchain-pem.sh
+source "$ROOT/scripts/lib/validate-fullchain-pem.sh"
+validate_le_fullchain_pem "/etc/letsencrypt/live/${PROXY_HOSTNAME}/fullchain.pem"
+
+install -m 644 "/etc/letsencrypt/live/${PROXY_HOSTNAME}/fullchain.pem" /etc/squid/tls/fullchain.pem
+install -m 600 "/etc/letsencrypt/live/${PROXY_HOSTNAME}/privkey.pem" /etc/squid/tls/privkey.pem
+/opt/nogap-split-proxy/scripts/deploy-config.sh

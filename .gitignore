@@ -1,0 +1,53 @@
+# Terraform
+terraform/terraform.tfvars
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+*tfplan*
+tfplan
+**/tfplan
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Secrets and local env (never commit)
+.env
+.env.*
+scripts/workstation-proxy.env
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials/
+cloudflare.ini
+/etc/letsencrypt/
+
+# Squid / auth stores
+**/passwd
+**/passwords
+**/htpasswd
+*.passwd
+
+# Certbot / ACME local artifacts
+certificates/
+acme/
+
+# OS / editor
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+
+# Test artifacts
+.pytest_cache/
+__pycache__/
+*.log
+
+# Operator copies of user lists (may contain usernames)
+users-export-*.txt

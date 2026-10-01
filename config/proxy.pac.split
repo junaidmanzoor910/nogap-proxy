@@ -1,0 +1,33 @@
+// Split routing (legacy): app-dev.nogap.ai and subdomains via proxy; all other hosts DIRECT.
+// Rename to proxy.pac and redeploy if you need split mode again (must match Squid allowlist).
+
+var PROXY_HOST = "PROXY proxy-dev.nogap.ai:443";
+var ALLOWED_APEX = "app-dev.nogap.ai";
+
+function isAllowedAppHost(host) {
+    if (!host) {
+        return false;
+    }
+    host = host.toLowerCase();
+    if (host === ALLOWED_APEX) {
+        return true;
+    }
+    var suffix = "." + ALLOWED_APEX;
+    if (host.length > suffix.length && host.slice(-suffix.length) === suffix) {
+        return true;
+    }
+    return false;
+}
+
+function FindProxyForURL(url, host) {
+    if (isPlainHostName(host)) {
+        if (isAllowedAppHost(host)) {
+            return PROXY_HOST;
+        }
+        return "DIRECT";
+    }
+    if (isAllowedAppHost(host)) {
+        return PROXY_HOST;
+    }
+    return "DIRECT";
+}
