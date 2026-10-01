@@ -37,6 +37,12 @@ export all_proxy="${HTTP_PROXY}"
 export NO_PROXY="localhost,127.0.0.1,::1,.local,169.254.169.254,host.docker.internal,*.internal"
 export no_proxy="${NO_PROXY}"
 
+# AWS SDK Connection Pooling and Optimization (Boto3 / Python / Node)
+export AWS_MAX_POOL_CONNECTIONS=50
+export AWS_METADATA_SERVICE_TIMEOUT=1
+export AWS_METADATA_SERVICE_NUM_ATTEMPTS=1
+export AWS_NODEJS_CONNECTION_REUSE_ENABLED=1
+
 # Enable Node.js native fetch proxy support (Node 20+)
 if command -v node >/dev/null 2>&1 && node --help 2>&1 | grep -q -- '--use-env-proxy'; then
   case "${NODE_OPTIONS:-}" in
@@ -58,6 +64,10 @@ if [[ -z "${_NOGAP_DOCKER_WRAPPED:-}" ]] && [[ -n "${_DOCKER_BIN}" ]]; then
         -e "all_proxy=${NOGAP_DOCKER_HTTPS_PROXY}" \
         -e "NO_PROXY=${NOGAP_DOCKER_NO_PROXY}" \
         -e "no_proxy=${NOGAP_DOCKER_NO_PROXY}" \
+        -e "AWS_MAX_POOL_CONNECTIONS=50" \
+        -e "AWS_METADATA_SERVICE_TIMEOUT=1" \
+        -e "AWS_METADATA_SERVICE_NUM_ATTEMPTS=1" \
+        -e "AWS_NODEJS_CONNECTION_REUSE_ENABLED=1" \
         "${@:2}"
     elif [[ "$1" == "compose" && -n "${NOGAP_DOCKER_HTTPS_PROXY:-}" ]]; then
       HTTP_PROXY="${NOGAP_DOCKER_HTTPS_PROXY}" \
@@ -68,6 +78,10 @@ if [[ -z "${_NOGAP_DOCKER_WRAPPED:-}" ]] && [[ -n "${_DOCKER_BIN}" ]]; then
       all_proxy="${NOGAP_DOCKER_HTTPS_PROXY}" \
       NO_PROXY="${NOGAP_DOCKER_NO_PROXY}" \
       no_proxy="${NOGAP_DOCKER_NO_PROXY}" \
+      AWS_MAX_POOL_CONNECTIONS=50 \
+      AWS_METADATA_SERVICE_TIMEOUT=1 \
+      AWS_METADATA_SERVICE_NUM_ATTEMPTS=1 \
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED=1 \
       "${_NOGAP_REAL_DOCKER}" "$@"
     else
       "${_NOGAP_REAL_DOCKER}" "$@"
