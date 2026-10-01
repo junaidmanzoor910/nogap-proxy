@@ -3,6 +3,8 @@
 set -uo pipefail
 
 unset -f docker 2>/dev/null || true
+unset _NOGAP_DOCKER_WRAPPED 2>/dev/null || true
+export _NOGAP_REAL_DOCKER="$(command -v docker 2>/dev/null || echo /usr/bin/docker)"
 
 _PROXY_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 _NETWORK="${NOGAP_DOCKER_NETWORK:-new-network}"
@@ -51,7 +53,7 @@ if command -v node >/dev/null 2>&1 && node --help 2>&1 | grep -q -- '--use-env-p
   esac
 fi
 
-if [[ -z "${_NOGAP_DOCKER_WRAPPED:-}" ]] && command -v docker >/dev/null 2>&1; then
+if command -v docker >/dev/null 2>&1; then
   docker() {
     if [[ "$1" == "run" && -n "${NOGAP_DOCKER_HTTPS_PROXY:-}" ]]; then
       command docker run \
@@ -87,8 +89,7 @@ if [[ -z "${_NOGAP_DOCKER_WRAPPED:-}" ]] && command -v docker >/dev/null 2>&1; t
     fi
   }
   export -f docker 2>/dev/null || true
-  _NOGAP_DOCKER_WRAPPED=1
-elif [[ -z "${_NOGAP_DOCKER_WRAPPED:-}" ]]; then
+else
   echo "Note: docker not in PATH — host proxy only." >&2
 fi
 

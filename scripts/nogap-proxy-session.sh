@@ -5,6 +5,7 @@ set -uo pipefail
 # Inherited exported docker() from an old session breaks setup (unset _NOGAP_REAL_DOCKER + set -u).
 unset -f docker 2>/dev/null || true
 unset _NOGAP_DOCKER_WRAPPED 2>/dev/null || true
+export _NOGAP_REAL_DOCKER="$(command -v docker 2>/dev/null || echo /usr/bin/docker)"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CHROME_SCRIPT="${ROOT}/scripts/chrome-via-proxy.sh"
@@ -45,8 +46,13 @@ if [[ -n "${_DOCKER_BIN}" ]]; then
   if [[ -n "${_gw_out}" ]]; then
     _GW="${_gw_out}"
   fi
-  if [[ -z "${_NOGAP_DOCKER_WRAPPED:-}" ]]; then
-    docker() {
+fi
+
+export NOGAP_DOCKER_HTTPS_PROXY="http://${_GW}:${FORWARDER_PORT}"
+export NOGAP_DOCKER_NO_PROXY="localhost,127.0.0.1,::1,.local,169.254.169.254,host.docker.internal,*.internal,nogap-auth-service,nogap-chat-service,nogap-questionnaire-service,nogap-unified-service,nogap-router-service,nogap-integrations-service"
+
+if command -v docker >/dev/null 2>&1; then
+  docker() {
       if [[ "$1" == "run" && -n "${NOGAP_DOCKER_HTTPS_PROXY:-}" ]]; then
         command docker run \
           -e "HTTP_PROXY=${NOGAP_DOCKER_HTTPS_PROXY}" \
@@ -81,14 +87,9 @@ if [[ -n "${_DOCKER_BIN}" ]]; then
       fi
     }
     export -f docker 2>/dev/null || echo "Note: docker() wrapper not exported — source ${ROOT}/scripts/enable-nogap-ec2-egress.sh" >&2
-    _NOGAP_DOCKER_WRAPPED=1
-  fi
 else
   echo "Note: docker not in PATH — host proxy only; start Docker for container AWS egress." >&2
 fi
-
-export NOGAP_DOCKER_HTTPS_PROXY="http://${_GW}:${FORWARDER_PORT}"
-export NOGAP_DOCKER_NO_PROXY="localhost,127.0.0.1,::1,.local,169.254.169.254,host.docker.internal,*.internal,nogap-auth-service,nogap-chat-service,nogap-questionnaire-service,nogap-unified-service,nogap-router-service,nogap-integrations-service"
 
 echo "Host CLI & Apps proxy: ${HTTP_PROXY} (NO_PROXY: ${NO_PROXY})"
 echo "Docker AWS egress:     ${NOGAP_DOCKER_HTTPS_PROXY}"
