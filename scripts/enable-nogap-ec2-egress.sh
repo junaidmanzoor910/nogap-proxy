@@ -51,11 +51,10 @@ if command -v node >/dev/null 2>&1 && node --help 2>&1 | grep -q -- '--use-env-p
   esac
 fi
 
-if [[ -z "${_NOGAP_DOCKER_WRAPPED:-}" ]] && [[ -n "${_DOCKER_BIN}" ]]; then
-  _NOGAP_REAL_DOCKER="${_DOCKER_BIN}"
+if [[ -z "${_NOGAP_DOCKER_WRAPPED:-}" ]] && command -v docker >/dev/null 2>&1; then
   docker() {
     if [[ "$1" == "run" && -n "${NOGAP_DOCKER_HTTPS_PROXY:-}" ]]; then
-      "${_NOGAP_REAL_DOCKER}" run \
+      command docker run \
         -e "HTTP_PROXY=${NOGAP_DOCKER_HTTPS_PROXY}" \
         -e "HTTPS_PROXY=${NOGAP_DOCKER_HTTPS_PROXY}" \
         -e "ALL_PROXY=${NOGAP_DOCKER_HTTPS_PROXY}" \
@@ -82,9 +81,9 @@ if [[ -z "${_NOGAP_DOCKER_WRAPPED:-}" ]] && [[ -n "${_DOCKER_BIN}" ]]; then
       AWS_METADATA_SERVICE_TIMEOUT=1 \
       AWS_METADATA_SERVICE_NUM_ATTEMPTS=1 \
       AWS_NODEJS_CONNECTION_REUSE_ENABLED=1 \
-      "${_NOGAP_REAL_DOCKER}" "$@"
+      command docker "$@"
     else
-      "${_NOGAP_REAL_DOCKER}" "$@"
+      command docker "$@"
     fi
   }
   export -f docker 2>/dev/null || true

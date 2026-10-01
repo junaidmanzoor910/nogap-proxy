@@ -46,10 +46,9 @@ if [[ -n "${_DOCKER_BIN}" ]]; then
     _GW="${_gw_out}"
   fi
   if [[ -z "${_NOGAP_DOCKER_WRAPPED:-}" ]]; then
-    _NOGAP_REAL_DOCKER="${_DOCKER_BIN}"
     docker() {
       if [[ "$1" == "run" && -n "${NOGAP_DOCKER_HTTPS_PROXY:-}" ]]; then
-        "${_NOGAP_REAL_DOCKER}" run \
+        command docker run \
           -e "HTTP_PROXY=${NOGAP_DOCKER_HTTPS_PROXY}" \
           -e "HTTPS_PROXY=${NOGAP_DOCKER_HTTPS_PROXY}" \
           -e "ALL_PROXY=${NOGAP_DOCKER_HTTPS_PROXY}" \
@@ -76,9 +75,9 @@ if [[ -n "${_DOCKER_BIN}" ]]; then
         AWS_METADATA_SERVICE_TIMEOUT=1 \
         AWS_METADATA_SERVICE_NUM_ATTEMPTS=1 \
         AWS_NODEJS_CONNECTION_REUSE_ENABLED=1 \
-        "${_NOGAP_REAL_DOCKER}" "$@"
+        command docker "$@"
       else
-        "${_NOGAP_REAL_DOCKER}" "$@"
+        command docker "$@"
       fi
     }
     export -f docker 2>/dev/null || echo "Note: docker() wrapper not exported — source ${ROOT}/scripts/enable-nogap-ec2-egress.sh" >&2
