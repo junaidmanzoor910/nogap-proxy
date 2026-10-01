@@ -1,13 +1,13 @@
 variable "aws_profile" {
   description = "AWS CLI profile name"
   type        = string
-  default     = "dev"
+  default     = "stagging"
 }
 
 variable "aws_region" {
   description = "AWS region"
   type        = string
-  default     = "us-east-1"
+  default     = "ap-south-1"
 }
 
 variable "project_name" {
@@ -71,21 +71,21 @@ variable "proxy_client_cidr_ipv6" {
 }
 
 variable "ubuntu_ami_id" {
-  description = "Ubuntu 24.04 LTS AMI in us-east-1 (pin after inspection; update on rebuild)"
+  description = "Ubuntu 24.04 LTS AMI in ap-south-1"
   type        = string
-  default     = "ami-0045d7fc2ad003464"
+  default     = "ami-007b1f3fdea0383d9"
 }
 
 variable "subnet_id" {
-  description = "Public subnet for the proxy instance (default VPC public subnet)"
+  description = "Public subnet for the proxy instance (default VPC public subnet in ap-south-1)"
   type        = string
-  default     = "subnet-0e1846394e4fca539"
+  default     = "subnet-0533622882f2dd7c3"
 }
 
 variable "vpc_id" {
   description = "VPC ID"
   type        = string
-  default     = "vpc-0e0ba7688bcfc8569"
+  default     = "vpc-075f158427b4c385f"
 }
 
 variable "additional_tags" {

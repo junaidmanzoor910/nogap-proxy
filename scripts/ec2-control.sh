@@ -2,8 +2,8 @@
 # scripts/ec2-control.sh: Start, stop, or check status of the NoGap EC2 Squid proxy instance.
 set -euo pipefail
 
-INSTANCE_ID="${EC2_PROXY_INSTANCE_ID:-i-0557dd46215ef359f}"
-REGION="${AWS_REGION:-us-east-1}"
+INSTANCE_ID="${EC2_PROXY_INSTANCE_ID:-i-0a38b5d00fc34ff1f}"
+REGION="${AWS_REGION:-ap-south-1}"
 PROFILE="${AWS_PROFILE:-stagging}"
 
 bold() { printf '\033[1m%s\033[0m\n' "$*"; }

@@ -12,7 +12,19 @@ http_port ${LOCAL_LISTEN_PORT}
 acl SSL_ports port 443
 cache_peer ${UPSTREAM_HOST} parent ${UPSTREAM_PORT} 0 no-query no-digest \
     login=${UPSTREAM_USER}:${UPSTREAM_PASS} ssl sslflags=DONT_VERIFY_PEER default
-never_direct allow SSL_ports
+
+# Solution 1: Smart Split Proxy
+# Only route NoGap APIs and AWS Cloud Services through EC2 (35.154.197.35)
+# Everything else (Google, Fonts, CDNs, GitHub, npm) goes DIRECT with 0ms proxy latency
+acl nogap_proxy_targets dstdomain .nogap.ai .amazonaws.com .amazoncognito.com .ipify.org
+always_direct deny nogap_proxy_targets
+always_direct allow all
+never_direct allow nogap_proxy_targets
+never_direct deny all
+
+client_persistent_connections on
+server_persistent_connections on
+pconn_timeout 120 seconds
 
 cache_dir ufs ${STATE_DIR}/cache 100 16 256
 cache deny all

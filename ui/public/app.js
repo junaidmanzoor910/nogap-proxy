@@ -70,10 +70,10 @@ async function updateStatus() {
     if (data.forwarderRunning) {
       el.navStatusDot.className = 'pulse-dot active';
       el.navStatusLabel.textContent = 'PROXY ACTIVE';
-      el.navEgressIp.textContent = data.currentEgressIp || '52.6.50.56';
+      el.navEgressIp.textContent = data.currentEgressIp || '35.154.197.35';
 
       el.step1StatusPill.className = 'status-pill-minimal online';
-      el.step1StatusText.textContent = `Egress: ${data.currentEgressIp || '52.6.50.56'} (Protected)`;
+      el.step1StatusText.textContent = `Egress: ${data.currentEgressIp || '35.154.197.35'} (Protected)`;
       el.btnToggleProxyText.textContent = 'Restart Proxy';
       el.stepCard1.classList.add('active-step');
     } else {

@@ -30,10 +30,10 @@ let cachedStatus = {
   forwarderPid: null,
   uptimeSeconds: 0,
   memoryUsageMb: 0,
-  upstreamHost: '52.6.50.56',
+  upstreamHost: '35.154.197.35',
   upstreamPort: 443,
   upstreamUser: 'proxyuser01',
-  currentEgressIp: '52.6.50.56',
+  currentEgressIp: '35.154.197.35',
   directIp: null,
   lastEgressCheck: null,
   egressLatencyMs: null
@@ -343,7 +343,7 @@ const server = http.createServer((req, res) => {
     // Perform comparative latency test
     const cmd = `
       CURL_LOCAL=$(curl -w "%{time_total}" -o /dev/null -s "http://127.0.0.1:3129" 2>&1 || echo "0")
-      CURL_EC2_TLS=$(curl -w "%{time_connect},%{time_appconnect},%{time_total}" -o /dev/null -s -k "https://52.6.50.56:443" 2>&1 || echo "0,0,0")
+      CURL_EC2_TLS=$(curl -w "%{time_connect},%{time_appconnect},%{time_total}" -o /dev/null -s -k "https://35.154.197.35:443" 2>&1 || echo "0,0,0")
       CURL_TUNNEL=$(curl -x http://127.0.0.1:3129 -w "%{time_connect},%{time_starttransfer},%{time_total}" -o /dev/null -s "https://api.ipify.org" 2>&1 || echo "0,0,0")
       echo "$CURL_LOCAL|$CURL_EC2_TLS|$CURL_TUNNEL"
     `;
@@ -423,7 +423,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify(data));
       } catch (e) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ instanceId: 'i-0557dd46215ef359f', state: 'unknown', publicIp: '52.6.50.56' }));
+        res.end(JSON.stringify({ instanceId: 'i-0a38b5d00fc34ff1f', state: 'unknown', publicIp: '35.154.197.35' }));
       }
     });
     return;

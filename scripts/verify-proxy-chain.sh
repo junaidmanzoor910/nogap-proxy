@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PORT="${NOGAP_LOCAL_FORWARDER_PORT:-3129}"
 PROXY="http://127.0.0.1:${PORT}"
-EXPECTED_EIP="${NOGAP_EXPECTED_EIP:-52.6.50.56}"
+EXPECTED_EIP="${NOGAP_EXPECTED_EIP:-35.154.197.35}"
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 ok() { echo "OK:   $*"; }
