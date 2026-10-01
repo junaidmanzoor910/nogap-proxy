@@ -96,6 +96,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   return 0 2>/dev/null || exit 0
 fi
 
+if [[ "${1:-}" == "--ui" || "${1:-}" == "ui" ]]; then
+  echo ""
+  exec "${ROOT}/run-ui.sh"
+fi
+
 echo ""
 echo "==> Forwarder OK — loading proxy session (host CLI + Docker)..."
 unset -f docker 2>/dev/null || true

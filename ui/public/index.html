@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NoGap Proxy | Developer Workflow Controller</title>
+  <meta name="description" content="Minimal, focused 3-step workflow controller for NoGap developer proxy egress.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="obsidian-theme">
+  <!-- Minimalist Background Grid -->
+  <div class="ambient-glow"></div>
+
+  <div class="workflow-container">
+    <!-- Clean Minimalist Header -->
+    <header class="top-nav">
+      <div class="nav-brand">
+        <span class="brand-spark">⚡</span>
+        <span class="brand-title">NOGAP PROXY</span>
+        <span class="brand-badge">WORKFLOW</span>
+      </div>
+
+      <div class="nav-status">
+        <div class="status-indicator" id="navStatus">
+          <span class="pulse-dot active" id="navStatusDot"></span>
+          <span class="status-label" id="navStatusLabel">PROXY ACTIVE</span>
+          <span class="status-ip mono" id="navEgressIp">52.6.50.56</span>
+          <span class="status-region">US-EAST-1</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Title & Guidance -->
+    <div class="page-intro">
+      <h1 class="page-title">Developer Proxy Workflow</h1>
+      <p class="page-subtitle">Follow the 3 sequential steps below to establish your protected local development session.</p>
+    </div>
+
+    <!-- 3-STEP SEQUENTIAL WORKFLOW -->
+    <div class="stepper-stack">
+      
+      <!-- STEP 1: START PROXY -->
+      <section class="step-card active-step" id="stepCard1">
+        <div class="step-sidebar">
+          <div class="step-number">01</div>
+          <div class="step-connector"></div>
+        </div>
+
+        <div class="step-body">
+          <div class="step-header">
+            <div>
+              <h2 class="step-title">Start Proxy Egress</h2>
+              <p class="step-desc">Route workstation external requests through the AWS EC2 proxy tunnel.</p>
+            </div>
+            <span class="status-pill-minimal online" id="step1StatusPill">
+              <span class="dot"></span>
+              <span id="step1StatusText">Egress: 52.6.50.56 (Protected)</span>
+            </span>
+          </div>
+
+          <!-- AWS EC2 Cloud Server Power Card -->
+          <div class="ec2-power-card" id="ec2PowerCard">
+            <div class="ec2-power-header">
+              <div class="ec2-info">
+                <span class="cloud-icon">☁️</span>
+                <div>
+                  <div class="ec2-name">AWS EC2 Proxy Instance</div>
+                  <div class="ec2-sub mono">i-0557dd46215ef359f • Elastic IP: 52.6.50.56 (us-east-1)</div>
+                </div>
+              </div>
+              <span class="ec2-badge" id="ec2StateBadge">
+                <span class="dot"></span>
+                <span id="ec2StateText">Checking...</span>
+              </span>
+            </div>
+            <div class="ec2-power-actions">
+              <button id="btnStartEc2" class="btn btn-emerald btn-sm">
+                <span>⚡ Turn ON EC2</span>
+              </button>
+              <button id="btnStopEc2" class="btn btn-ghost btn-sm">
+                <span>⏹ Turn OFF EC2</span>
+              </button>
+              <span class="ec2-notice hidden" id="ec2Notice">Updating state...</span>
+            </div>
+          </div>
+
+          <div class="step-details-grid">
+            <div class="detail-item">
+              <span class="detail-label">Local Forwarder</span>
+              <span class="detail-val mono" id="detailForwarderPort">127.0.0.1:3129</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Upstream EC2</span>
+              <span class="detail-val mono" id="detailUpstream">52.6.50.56:443</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Verified Latency</span>
+              <span class="detail-val mono text-accent" id="detailLatency">~260 ms RTT</span>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button id="btnToggleProxy" class="btn btn-emerald">
+              <span class="btn-icon">⚡</span>
+              <span id="btnToggleProxyText">Start / Restart Forwarder</span>
+            </button>
+            <button id="btnStopProxy" class="btn btn-ghost">
+              <span class="btn-icon">⏹</span>
+              <span>Stop Proxy</span>
+            </button>
+            <button id="btnTestEgress" class="btn btn-ghost" title="Re-verify public IP">
+              <span class="btn-icon">🔍</span>
+              <span>Verify IP</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 2: START LOCAL BACKEND & FRONTEND -->
+      <section class="step-card" id="stepCard2">
+        <div class="step-sidebar">
+          <div class="step-number">02</div>
+          <div class="step-connector"></div>
+        </div>
+
+        <div class="step-body">
+          <div class="step-header">
+            <div>
+              <h2 class="step-title">Start Local Backend & Frontend</h2>
+              <p class="step-desc">Start your local development servers. Localhost traffic stays 100% direct with 0ms latency.</p>
+            </div>
+          </div>
+
+          <!-- Live Port Indicators -->
+          <div class="port-status-container">
+            <!-- Port 4000: Backend -->
+            <div class="port-status-card" id="port4000Card">
+              <div class="port-card-header">
+                <span class="service-icon">⚙️</span>
+                <div>
+                  <div class="service-name">Backend API</div>
+                  <div class="service-endpoint mono">localhost:4000</div>
+                </div>
+              </div>
+              <div class="port-badge-group">
+                <span class="port-badge" id="port4000Badge">
+                  <span class="dot"></span>
+                  <span id="port4000Text">Checking...</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Port 3000: Frontend -->
+            <div class="port-status-card" id="port3000Card">
+              <div class="port-card-header">
+                <span class="service-icon">🌐</span>
+                <div>
+                  <div class="service-name">Frontend Web (Next.js)</div>
+                  <div class="service-endpoint mono">localhost:3000</div>
+                </div>
+              </div>
+              <div class="port-badge-group">
+                <span class="port-badge" id="port3000Badge">
+                  <span class="dot"></span>
+                  <span id="port3000Text">Checking...</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Instructions & Command Helper -->
+          <div class="command-box">
+            <div class="command-title">Run in your nogap-services terminal:</div>
+            <div class="command-line">
+              <code class="mono">npm run dev</code>
+              <button class="btn-copy-code" id="btnCopyDev">Copy</button>
+            </div>
+            <div class="command-note">
+              ✓ Localhost bypass rule enforced: <code>NO_PROXY="localhost,127.0.0.1,::1,host.docker.internal"</code>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 3: OPEN CHROME PROXY TAB -->
+      <section class="step-card" id="stepCard3">
+        <div class="step-sidebar">
+          <div class="step-number">03</div>
+        </div>
+
+        <div class="step-body">
+          <div class="step-header">
+            <div>
+              <h2 class="step-title">Open Chrome Proxy Tab</h2>
+              <p class="step-desc">Launch an isolated Chrome session configured with the proxy and loopback bypass.</p>
+            </div>
+          </div>
+
+          <!-- Confirmation Prompt Box -->
+          <div class="chrome-prompt-box">
+            <div class="prompt-icon">🚀</div>
+            <div class="prompt-content">
+              <div class="prompt-question">Open isolated Chrome browser routed via EC2 proxy?</div>
+              <div class="prompt-explanation">
+                Opens an isolated Chrome profile with proxy set to <code>http://127.0.0.1:3129</code>, 
+                pointing directly to <code>http://localhost:3000</code> with localhost safely bypassed.
+              </div>
+              <div class="prompt-actions">
+                <button id="btnLaunchChrome" class="btn btn-emerald btn-lg">
+                  <span class="btn-icon">🌐</span>
+                  <span>Yes, Launch Chrome Tab</span>
+                </button>
+                <span id="chromeStatusNotice" class="chrome-notice hidden">✓ Chrome launch command sent!</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chrome-flags-hint">
+            <span class="hint-label">Underlying command:</span>
+            <code class="mono">google-chrome --proxy-server="http://127.0.0.1:3129" --proxy-bypass-list="&lt;-loopback&gt;;localhost;127.0.0.1;::1" http://localhost:3000</code>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Optional Collapsible Recent Traffic Drawer -->
+    <details class="minimal-logs-drawer">
+      <summary class="drawer-summary">
+        <span>🛰️ View Recent Outbound Traffic (<span id="recentLogCount">0</span> captured)</span>
+        <span class="drawer-arrow">▼</span>
+      </summary>
+      <div class="drawer-content">
+        <div class="mini-table-wrapper">
+          <table class="mini-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Time</th>
+                <th>Target Host</th>
+                <th>Duration</th>
+                <th>Bytes</th>
+              </tr>
+            </thead>
+            <tbody id="miniLogTableBody">
+              <tr>
+                <td colspan="5" class="text-center text-muted">Listening for requests...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+
+    <!-- Footer -->
+    <footer class="minimal-footer">
+      <div class="footer-status">
+        <span class="footer-dot"></span> Forwarder: <code>127.0.0.1:3129</code> • EC2 Parent: <code>52.6.50.56:443</code>
+      </div>
+      <div class="footer-copy mono">NoGap AI • Minimal Dev Workflow</div>
+    </footer>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
