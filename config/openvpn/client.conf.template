@@ -1,0 +1,38 @@
+# OpenVPN Client Configuration (Disguised HTTPS Mode)
+client
+dev tun
+proto tcp
+remote {{VPN_HOST}} 443
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+remote-cert-tls server
+
+# Cipher & Auth matches server
+cipher AES-256-GCM
+auth SHA256
+
+# Verbosity
+verb 3
+mute 10
+
+# Windows / Linux DNS handling if available
+# ignore-unknown-option block-outside-dns
+# setenv opt block-outside-dns
+
+<ca>
+{{CA_CERT}}
+</ca>
+
+<cert>
+{{CLIENT_CERT}}
+</cert>
+
+<key>
+{{CLIENT_KEY}}
+</key>
+
+<tls-crypt>
+{{TLS_CRYPT_KEY}}
+</tls-crypt>

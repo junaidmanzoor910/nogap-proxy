@@ -56,9 +56,48 @@ _port_listening() {
   ss -tlnH "sport = :${LISTEN_PORT}" 2>/dev/null | grep -q .
 }
 
+_configure_docker_proxy() {
+  if ! command -v docker >/dev/null 2>&1; then
+    return 0
+  fi
+  mkdir -p "${HOME}/.docker"
+  local docker_cfg="${HOME}/.docker/config.json"
+  local docker_backup="${HOME}/.docker/config.json.nogap-backup"
+  if [[ -f "$docker_cfg" ]] && [[ ! -f "$docker_backup" ]]; then
+    # Only backup if not created by nogap
+    if ! grep -q "nogap-auth-service" "$docker_cfg" 2>/dev/null; then
+      cp "$docker_cfg" "$docker_backup"
+    fi
+  fi
+
+  local docker_net="${NOGAP_DOCKER_NETWORK:-new-network}"
+  local gw="172.17.0.1"
+  if ! docker network inspect "${docker_net}" >/dev/null 2>&1; then
+    docker network create "${docker_net}" >/dev/null 2>&1 || true
+  fi
+  local gw_out
+  gw_out="$(docker network inspect "${docker_net}" -f '{{(index .IPAM.Config 0).Gateway}}' 2>/dev/null || true)"
+  if [[ -n "${gw_out}" ]]; then
+    gw="${gw_out}"
+  fi
+
+  cat << EOF > "$docker_cfg"
+{
+  "proxies": {
+    "default": {
+      "httpProxy": "http://${gw}:${LISTEN_PORT}",
+      "httpsProxy": "http://${gw}:${LISTEN_PORT}",
+      "noProxy": "localhost,127.0.0.1,::1,.local,169.254.169.254,172.17.0.1,172.18.0.1,172.16.0.0/12,10.0.0.0/8,192.168.0.0/16,host.docker.internal,*.internal,nogap-auth-service,nogap-chat-service,nogap-questionnaire-service,nogap-unified-service,nogap-router-service,nogap-integrations-service"
+    }
+  }
+}
+EOF
+}
+
 # Healthy existing instance: reconfigure Squid so ACL and upstream changes take effect
 if [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null && _port_listening; then
   squid -n "$SQUID_INSTANCE" -f "$CONF" -k reconfigure 2>/dev/null || true
+  _configure_docker_proxy
   echo "Local forwarder already running (pid $(cat "$PIDFILE")) on 127.0.0.1:${LISTEN_PORT} (reconfigured)."
   exit 0
 fi
@@ -103,24 +142,4 @@ echo "Local forwarder: http://127.0.0.1:${LISTEN_PORT} → https://${UPSTREAM_HO
 echo "PAC: file://${ROOT}/config/workstation.pac"
 
 # Configure Docker daemon/client proxy so all containers automatically use EC2 forwarder
-if command -v docker >/dev/null 2>&1; then
-  mkdir -p "${HOME}/.docker"
-  DOCKER_CFG="${HOME}/.docker/config.json"
-  DOCKER_BACKUP="${HOME}/.docker/config.json.nogap-backup"
-  if [[ -f "$DOCKER_CFG" ]] && [[ ! -f "$DOCKER_BACKUP" ]]; then
-    # Only backup if not created by nogap
-    if ! grep -q "nogap-auth-service" "$DOCKER_CFG" 2>/dev/null; then
-      cp "$DOCKER_CFG" "$DOCKER_BACKUP"
-    fi
-  fi
-  cat << EOF > "$DOCKER_CFG"
-{
-  "proxies": {
-    "default": {
-      "httpsProxy": "http://172.17.0.1:${LISTEN_PORT}",
-      "noProxy": "localhost,127.0.0.1,::1,.local,169.254.169.254,172.17.0.1,172.18.0.1,172.16.0.0/12,10.0.0.0/8,192.168.0.0/16,host.docker.internal,*.internal,nogap-auth-service,nogap-chat-service,nogap-questionnaire-service,nogap-unified-service,nogap-router-service,nogap-integrations-service"
-    }
-  }
-}
-EOF
-fi
+_configure_docker_proxy

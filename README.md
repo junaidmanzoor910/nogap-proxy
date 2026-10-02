@@ -1,27 +1,39 @@
-# nogap-split-proxy
+# nogap-proxy: Disguised OpenVPN & Secure Egress
 
-Reproducible **AWS EC2** deployment for an **authenticated HTTPS forward proxy** (Squid) with PAC on Nginx (**8443**). Default: **full-machine egress** via proxy (HTTPS CONNECT to any host on **443**). Administration via **SSM Session Manager** — **no SSH**.
+Reproducible **AWS EC2** deployment supporting **pure-software OpenVPN** with **traffic disguise** over **TCP 443** (anti-DPI via `tls-crypt` and active probe resistance via Nginx `port-share 8443`), alongside the existing Squid forward proxy. Administration via **SSM Session Manager** — **no SSH**.
 
-**Status:** Project artifacts only. **No AWS resources, DNS, or certificates have been created by this repository run.**
-
-## Architecture
+## OpenVPN Disguised Architecture (Recommended)
 
 ```
-Browser/system proxy → HTTPS proxy-dev.nogap.ai:443 (TLS) → Squid → Internet (egress via Elastic IP)
-localhost / .local   → DIRECT (destination only — local inbound unchanged)
-PAC URL       → https://proxy-dev.nogap.ai:8443/proxy.pac (Nginx TLS, not CONNECT proxy)
-Workstation   → `./run-nogap-local-proxy.sh` (interactive); details → [docs/NOGAP-LOCAL-EC2-EGRESS.md](docs/NOGAP-LOCAL-EC2-EGRESS.md)
-Admin         → AWS SSM StartSession (no TCP 22)
+Workstation/Clients ──── TCP 443 (Disguised HTTPS) ────► AWS EC2 (OpenVPN Server)
+                                                                 │
+                                ┌────────────────────────────────┴────────────────────────────────┐
+                                ▼                                                                 ▼
+                   Authorized Client (tls-crypt)                                  Non-VPN Probe / Port Scan
+                                │                                                                 │
+                                ▼                                                                 ▼
+                 tun0 Interface (10.8.0.0/24)                                          port-share 127.0.0.1:8443
+                                │                                                                 │
+                                ▼                                                                 ▼
+                     iptables NAT MASQUERADE                                           Nginx Disguise Web Server
+                                │                                                    (Returns HTTPS 200 OK Website)
+                                ▼
+                   Egress via EC2 Elastic IP
 ```
 
-Squid enforces allowlists even if clients edit PAC. No TLS interception; no client root CA.
+- **Disguise Mechanism**: Listens on TCP port 443 (standard HTTPS). Uses `tls-crypt` to eliminate OpenVPN handshake signatures. Probes/scanners falling on port 443 get forwarded via `port-share` to a local Nginx site, appearing as a genuine HTTPS web server.
+- **Software, Not Service**: Runs community OpenVPN software directly on EC2 and Linux workstations without third-party VPN SaaS or AWS Client VPN fees.
+- **Interactive Control**: Manage via `./run-nogap-vpn.sh` or through the Web UI (`./run-ui.sh`).
+- **Complete Walkthrough**: See [docs/OPENVPN-DISGUISED-SETUP.md](docs/OPENVPN-DISGUISED-SETUP.md).
 
-## Prerequisites
+## Quickstart (OpenVPN)
 
-- AWS CLI profile **`dev`**, region **`us-east-1`** (pass `--region us-east-1` even if profile region unset).
-- Terraform **>= 1.5** (not required for local tests).
-- Cloudflare DNS control for **`proxy-dev.nogap.ai`** (grey cloud **A** → Elastic IP).
-- Operator IAM for `ssm:StartSession` (see [docs/SSM-ADMIN.md](docs/SSM-ADMIN.md)).
+1. **Bootstrap EC2**: Run `sudo ./scripts/bootstrap-host-openvpn.sh` on EC2 (or use `cloud-init`).
+2. **Fetch Profile**: `./run-nogap-vpn.sh fetch` (downloads `client.ovpn` via SSM).
+3. **Connect**: `./run-nogap-vpn.sh start` (tunnels all workstation traffic through EC2).
+4. **Status**: `./run-nogap-vpn.sh status` (verifies egress IP and latency).
+5. **Verify Disguise**: `./run-nogap-vpn.sh probe` (verifies port 443 returns Nginx HTTPS 200).
+6. **Disconnect**: `./run-nogap-vpn.sh stop` (restores local workstation routing).
 
 ## Project layout
 

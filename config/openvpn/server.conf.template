@@ -1,0 +1,52 @@
+# OpenVPN Server Configuration (Disguised HTTPS Mode)
+# Runs over TCP port 443 to blend into regular HTTPS traffic
+# Uses tls-crypt to encrypt TLS handshakes (defeating DPI signatures)
+# Uses port-share to forward non-VPN HTTPS traffic to local Nginx
+
+port 443
+proto tcp-server
+dev tun0
+
+# Server PKI & Keys
+ca /etc/openvpn/server/ca.crt
+cert /etc/openvpn/server/server.crt
+key /etc/openvpn/server/server.key
+dh /etc/openvpn/server/dh.pem
+tls-crypt /etc/openvpn/server/tls-crypt.key
+
+# VPN Network Pool
+server 10.8.0.0 255.255.255.0
+topology subnet
+ifconfig-pool-persist /var/log/openvpn/ipp.txt
+
+# Routing: Direct all internet traffic through EC2 Elastic IP
+push "redirect-gateway def1 bypass-dhcp"
+push "dhcp-option DNS 1.1.1.1"
+push "dhcp-option DNS 8.8.8.8"
+
+# Disguise / Anti-Censorship:
+# If incoming connection on 443 is NOT OpenVPN (e.g. web browser, port scan, probe),
+# OpenVPN transparently proxies the connection to Nginx on 127.0.0.1:8443.
+# The scanner sees a completely normal, working HTTPS web server!
+port-share 127.0.0.1 8443
+
+# Cryptography & Performance
+cipher AES-256-GCM
+data-ciphers AES-256-GCM:AES-128-GCM:CHACHA20-POLY1305
+auth SHA256
+
+# Connection keepalive and recovery
+keepalive 10 120
+persist-key
+persist-tun
+
+# Security Hardening
+user nobody
+group nogroup
+
+# Logging & Telemetry
+status /var/log/openvpn/openvpn-status.log 10
+status-version 2
+log-append /var/log/openvpn/openvpn.log
+verb 3
+mute 10

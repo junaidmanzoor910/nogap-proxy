@@ -27,3 +27,19 @@ output "ssm_start_session_command" {
   description = "Operator command to open a shell (requires IAM ssm:StartSession)"
   value       = "aws ssm start-session --profile ${var.aws_profile} --region ${var.aws_region} --target ${aws_instance.proxy.id}"
 }
+
+output "openvpn_endpoint" {
+  description = "Disguised OpenVPN server endpoint (TCP 443 with tls-crypt)"
+  value       = "${aws_eip.proxy.public_ip}:${var.proxy_https_port}"
+}
+
+output "fetch_client_ovpn_command" {
+  description = "Command to fetch client.ovpn profile to workstation"
+  value       = "./scripts/fetch-client-ovpn.sh"
+}
+
+output "start_vpn_command" {
+  description = "Command to start OpenVPN client software on workstation"
+  value       = "./run-nogap-vpn.sh start"
+}
+

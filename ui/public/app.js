@@ -43,7 +43,13 @@ const el = {
   // Drawer
   recentLogCount: document.getElementById('recentLogCount'),
   miniLogTableBody: document.getElementById('miniLogTableBody'),
-  toastContainer: document.getElementById('toastContainer')
+  toastContainer: document.getElementById('toastContainer'),
+  // OpenVPN Disguised Controls
+  vpnStatusPill: document.getElementById('vpnStatusPill'),
+  vpnStatusText: document.getElementById('vpnStatusText'),
+  btnStartVpn: document.getElementById('btnStartVpn'),
+  btnStopVpn: document.getElementById('btnStopVpn'),
+  btnProbeDisguise: document.getElementById('btnProbeDisguise')
 };
 
 function showToast(msg, type = 'success') {
@@ -89,6 +95,22 @@ async function updateStatus() {
 
     if (data.upstreamHost) {
       el.detailUpstream.textContent = `${data.upstreamHost}:${data.upstreamPort || 443}`;
+    }
+
+    // OpenVPN Disguised Status Detection
+    if (data.vpn && data.vpn.active) {
+      if (el.vpnStatusPill) {
+        el.vpnStatusPill.className = 'status-pill-minimal online';
+        el.vpnStatusText.textContent = `Connected (${data.vpn.tunnelIp || 'tun0'})`;
+      }
+      el.navStatusDot.className = 'pulse-dot active';
+      el.navStatusLabel.textContent = 'OPENVPN ACTIVE';
+      if (data.currentEgressIp) {
+        el.navEgressIp.textContent = data.currentEgressIp;
+      }
+    } else if (el.vpnStatusPill) {
+      el.vpnStatusPill.className = 'status-pill-minimal offline';
+      el.vpnStatusText.textContent = 'Disconnected';
     }
 
     // 2. Port 4000: Backend API Detection
@@ -226,6 +248,78 @@ el.btnLaunchChrome.addEventListener('click', async () => {
     el.btnLaunchChrome.disabled = false;
   }
 });
+
+// -------------------------------------------------------------
+// OpenVPN Action Handlers
+// -------------------------------------------------------------
+if (el.btnStartVpn) {
+  el.btnStartVpn.addEventListener('click', async () => {
+    const orig = el.btnStartVpn.innerHTML;
+    el.btnStartVpn.innerHTML = `<span class="spinner"></span> <span>Connecting...</span>`;
+    el.btnStartVpn.disabled = true;
+
+    try {
+      const res = await fetch('/api/vpn/start', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showToast('OpenVPN software connected successfully (TCP 443)', 'success');
+        await updateStatus();
+      } else {
+        showToast('OpenVPN connection error. Profile might need fetching.', 'error');
+      }
+    } catch (err) {
+      showToast(`Error: ${err.message}`, 'error');
+    } finally {
+      el.btnStartVpn.innerHTML = orig;
+      el.btnStartVpn.disabled = false;
+    }
+  });
+}
+
+if (el.btnStopVpn) {
+  el.btnStopVpn.addEventListener('click', async () => {
+    const orig = el.btnStopVpn.innerHTML;
+    el.btnStopVpn.innerHTML = `<span class="spinner"></span>`;
+    el.btnStopVpn.disabled = true;
+
+    try {
+      const res = await fetch('/api/vpn/stop', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showToast('OpenVPN disconnected. Routing restored.', 'success');
+        await updateStatus();
+      }
+    } catch (err) {
+      showToast(`Error: ${err.message}`, 'error');
+    } finally {
+      el.btnStopVpn.innerHTML = orig;
+      el.btnStopVpn.disabled = false;
+    }
+  });
+}
+
+if (el.btnProbeDisguise) {
+  el.btnProbeDisguise.addEventListener('click', async () => {
+    const orig = el.btnProbeDisguise.innerHTML;
+    el.btnProbeDisguise.innerHTML = `<span class="spinner"></span> <span>Probing 443...</span>`;
+    el.btnProbeDisguise.disabled = true;
+
+    try {
+      const res = await fetch('/api/vpn/probe-disguise', { method: 'POST' });
+      const data = await res.json();
+      if (data.success && data.output && data.output.includes('PERFECTLY DISGUISED')) {
+        showToast('✓ Port 443 verified: Responds as standard HTTPS web server!', 'success');
+      } else {
+        showToast('Disguise probe complete. Check logs for details.', 'success');
+      }
+    } catch (err) {
+      showToast(`Probe error: ${err.message}`, 'error');
+    } finally {
+      el.btnProbeDisguise.innerHTML = orig;
+      el.btnProbeDisguise.disabled = false;
+    }
+  });
+}
 
 // -------------------------------------------------------------
 // Optional Mini-Logs

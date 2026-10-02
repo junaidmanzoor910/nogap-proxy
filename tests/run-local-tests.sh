@@ -21,6 +21,7 @@ run_suite "PAC matching" python3 tests/test_pac_matching.py -v
 run_suite "Workstation PAC" python3 tests/test_workstation_pac.py -v
 run_suite "Squid ACL static checks" python3 tests/test_squid_acl.py -v
 run_suite "Secret scan" bash tests/test_no_secrets.sh
+run_suite "OpenVPN disguised architecture" bash tests/test_openvpn_disguise.sh
 
 if command -v docker >/dev/null 2>&1; then
   run_suite "Containerized Squid/Nginx validation" bash tests/validate-services-docker.sh

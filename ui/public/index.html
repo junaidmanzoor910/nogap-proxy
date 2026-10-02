@@ -116,6 +116,34 @@
               <span>Verify IP</span>
             </button>
           </div>
+
+          <!-- OpenVPN Disguised Mode (TCP 443 + tls-crypt) -->
+          <div class="ec2-power-card" style="margin-top: 1.25rem; border-color: rgba(56, 189, 248, 0.3); background: rgba(15, 23, 42, 0.65);" id="vpnControlCard">
+            <div class="ec2-power-header">
+              <div class="ec2-info">
+                <span class="cloud-icon">🛡️</span>
+                <div>
+                  <div class="ec2-name" style="color: #38bdf8;">OpenVPN Software Mode (Disguised HTTPS)</div>
+                  <div class="ec2-sub mono" style="font-size: 0.75rem;">TCP Port 443 • tls-crypt Obfuscation • Port-Share 8443 (Nginx)</div>
+                </div>
+              </div>
+              <span class="status-pill-minimal offline" id="vpnStatusPill">
+                <span class="dot"></span>
+                <span id="vpnStatusText">Disconnected</span>
+              </span>
+            </div>
+            <div class="ec2-power-actions" style="margin-top: 0.75rem;">
+              <button id="btnStartVpn" class="btn btn-emerald btn-sm">
+                <span>🚀 Connect OpenVPN</span>
+              </button>
+              <button id="btnStopVpn" class="btn btn-ghost btn-sm">
+                <span>⏹ Disconnect OpenVPN</span>
+              </button>
+              <button id="btnProbeDisguise" class="btn btn-ghost btn-sm" title="Probe port 443 with HTTPS to test web disguise">
+                <span>🕵️ Probe Disguise (443)</span>
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 

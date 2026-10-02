@@ -197,7 +197,27 @@ function getSystemMetrics(callback) {
           } catch (_) {}
         }
 
-        callback(cachedStatus);
+        // Detect OpenVPN client status
+        exec('ip addr show dev tun0 2>/dev/null', (vpnErr, vpnStdout) => {
+          const vpnActive = !vpnErr && vpnStdout && vpnStdout.includes('inet ');
+          let vpnIp = null;
+          if (vpnActive) {
+            const ipMatch = vpnStdout.match(/inet\s+([0-9.]+)/);
+            vpnIp = ipMatch ? ipMatch[1] : null;
+          }
+          const vpnPidFile = '/tmp/nogap-openvpn.pid';
+          const vpnPid = fs.existsSync(vpnPidFile) ? fs.readFileSync(vpnPidFile, 'utf8').trim() : null;
+
+          cachedStatus.vpn = {
+            active: vpnActive,
+            pid: vpnPid,
+            tunnelIp: vpnIp,
+            disguisePort: '443 (TCP)',
+            disguiseMode: 'TCP 443 + tls-crypt (fallback: Nginx 8443)'
+          };
+
+          callback(cachedStatus);
+        });
       });
     });
   });
@@ -408,6 +428,44 @@ const server = http.createServer((req, res) => {
         success: !err,
         targetUrl,
         message: 'Chrome launched with isolated proxy profile'
+      }));
+    });
+    return;
+  }
+
+  // OpenVPN Actions (Disguised HTTPS Mode)
+  if (req.method === 'POST' && pathname === '/api/vpn/start') {
+    const vpnScript = path.join(ROOT_DIR, 'scripts', 'start-vpn.sh');
+    exec(`bash "${vpnScript}"`, (err, stdout, stderr) => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: !err,
+        output: stdout + stderr
+      }));
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/vpn/stop') {
+    const vpnScript = path.join(ROOT_DIR, 'scripts', 'stop-vpn.sh');
+    exec(`bash "${vpnScript}"`, (err, stdout, stderr) => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: !err,
+        output: stdout + stderr
+      }));
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/vpn/probe-disguise') {
+    const verifyScript = path.join(ROOT_DIR, 'scripts', 'verify-disguise.sh');
+    const targetHost = cachedStatus.upstreamHost || '35.154.197.35';
+    exec(`bash "${verifyScript}" "${targetHost}"`, (err, stdout, stderr) => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: !err,
+        output: stdout + stderr
       }));
     });
     return;

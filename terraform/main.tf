@@ -16,44 +16,24 @@ locals {
 
 resource "aws_security_group" "proxy" {
   name        = "${var.project_name}-sg"
-  description = "HTTPS forward proxy and PAC; SSM egress only (no SSH)"
+  description = "Disguised OpenVPN on TCP 443 (looks like HTTPS); SSM egress only (no SSH)"
   vpc_id      = var.vpc_id
 
-  # Squid — authenticated HTTPS forward proxy
+  # OpenVPN — disguised as HTTPS on TCP 443 (with internal fallback to Nginx)
   ingress {
-    description = "Squid HTTPS forward proxy"
+    description = "OpenVPN disguised over HTTPS (TCP 443)"
     from_port   = var.proxy_https_port
     to_port     = var.proxy_https_port
     protocol    = "tcp"
     cidr_blocks = [var.proxy_client_cidr_ipv4]
   }
 
-  # Nginx — PAC over TLS (not a CONNECT forward proxy)
-  ingress {
-    description = "PAC file HTTPS"
-    from_port   = var.pac_https_port
-    to_port     = var.pac_https_port
-    protocol    = "tcp"
-    cidr_blocks = [var.proxy_client_cidr_ipv4]
-  }
-
   dynamic "ingress" {
     for_each = var.enable_ipv6_ingress ? [1] : []
     content {
-      description      = "Squid HTTPS forward proxy (IPv6)"
+      description      = "OpenVPN disguised over HTTPS (IPv6 TCP 443)"
       from_port        = var.proxy_https_port
       to_port          = var.proxy_https_port
-      protocol         = "tcp"
-      ipv6_cidr_blocks = [var.proxy_client_cidr_ipv6]
-    }
-  }
-
-  dynamic "ingress" {
-    for_each = var.enable_ipv6_ingress ? [1] : []
-    content {
-      description      = "PAC file HTTPS (IPv6)"
-      from_port        = var.pac_https_port
-      to_port          = var.pac_https_port
       protocol         = "tcp"
       ipv6_cidr_blocks = [var.proxy_client_cidr_ipv6]
     }
