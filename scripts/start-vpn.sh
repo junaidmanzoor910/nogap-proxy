@@ -26,17 +26,24 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
   exit 1
 fi
 
-# Check if already running
-if [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
-  green "✓ OpenVPN client is already running (PID: $(cat "$PID_FILE"))."
-  "${ROOT}/scripts/vpn-status.sh"
-  exit 0
-fi
+# Clean up any stale or hung OpenVPN client processes
+sudo pkill -f "client.ovpn" 2>/dev/null || true
+rm -f "$PID_FILE"
+sleep 1
 
 # Record current direct public IP before connecting
 echo "Checking pre-connection direct IP..."
 DIRECT_IP="$(curl -fsS -m 4 https://api.ipify.org 2>/dev/null || echo "unknown")"
 echo "Workstation direct IP: ${DIRECT_IP}"
+
+# Explicitly pin the EC2 server IP to the physical default gateway to prevent routing loops
+VPN_HOST=$(grep "^remote " "$CONFIG_FILE" | awk '{print $2}' | head -n1)
+DEFAULT_GW=$(ip route show default | awk '{print $3}' | head -n1)
+DEFAULT_IF=$(ip route show default | awk '{print $5}' | head -n1)
+if [[ -n "$VPN_HOST" && -n "$DEFAULT_GW" && -n "$DEFAULT_IF" ]]; then
+  echo "Pinning host route: ${VPN_HOST} via ${DEFAULT_GW} (${DEFAULT_IF})..."
+  sudo ip route replace "$VPN_HOST" via "$DEFAULT_GW" dev "$DEFAULT_IF" 2>/dev/null || true
+fi
 
 bold "==> Launching OpenVPN client software (connecting over TCP 443 disguised HTTPS)..."
 sudo openvpn \

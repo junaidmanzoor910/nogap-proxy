@@ -35,6 +35,9 @@ if pgrep -f "client.ovpn" >/dev/null 2>&1; then
   stopped=1
 fi
 
+# Remove explicit host route to EC2 if present
+sudo ip route del 35.154.197.35 2>/dev/null || true
+
 sleep 1
 
 # Check current restored direct IP
